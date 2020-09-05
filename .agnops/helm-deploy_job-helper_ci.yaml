@@ -1,0 +1,20 @@
+workflow:
+  autoTrigger: true
+  branchFilters:
+    - master
+  containers:
+    - container:
+      addOns:
+        isDocker: true
+      kubernetes:
+        envFrom:
+          - secretRef:
+              name: docker-registry-creds
+      name: docker
+      image: docker:18.09.9
+      command: |
+        echo "$DOCKERHUBPASS" | docker login --username $DOCKERHUBUSER --password-stdin
+        docker build -f helm-deploy.Dockerfile -t agnops/helm-deploy .
+        docker build -f job-helper.Dockerfile -t agnops/job-helper .
+        docker push agnops/helm-deploy
+        docker push agnops/job-helper

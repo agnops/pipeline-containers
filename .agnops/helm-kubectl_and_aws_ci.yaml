@@ -1,0 +1,25 @@
+workflow:
+  autoTrigger: true
+  branchFilters:
+    - master
+  containers:
+    - container:
+      addOns:
+        isDocker: true
+      kubernetes:
+        envFrom:
+          - secretRef:
+              name: docker-registry-creds
+      name: docker
+      image: docker:18.09.9
+      command: |
+        export HELM_VERSION="v3.2.1"
+        export HELM_SHA256SUM="018f9908cb950701a5d59e757653a790c66d8eda288625dbb185354ca6f41f6b"
+        export KUBECTL_VERSION="v1.16.5"
+        export BUILD_ARGS="--build-arg HELM_VERSION=$HELM_VERSION --build-arg HELM_SHA256SUM=$HELM_SHA256SUM --build-arg KUBECTL_VERSION=$KUBECTL_VERSION"
+
+        echo "$DOCKERHUBPASS" | docker login --username $DOCKERHUBUSER --password-stdin
+        docker build $BUILD_ARGS -f aws.Dockerfile -t agnops/aws-deployment-kubectl-helm .
+        docker build $BUILD_ARGS -f helm-kubectl.Dockerfile -t agnops/helm-kubectl .
+        docker push agnops/aws-deployment-kubectl-helm
+        docker push agnops/helm-kubectl
